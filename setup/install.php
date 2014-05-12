@@ -1,85 +1,209 @@
 <?php
-require "../php/func.php";
+require_once "../php/func.php";
 
-echo "Pendactive Setup<br><br>";
-
-
-echo "Checking MYSQL connection... ";
-
-$link = @mysql_connect (CONFIG_DB_HOSTNAME, CONFIG_DB_USER, CONFIG_DB_PASSWORD);
-
-showResult($link);
-
-mysql_select_db(CONFIG_DB_NAME, $link);
-
-
-echo "Creating TABLES... ";
-
-
-$sql = file_get_contents("db.sql");
-
-
-$queries = preg_split("/;+(?=([^'|^\\\']*['|\\\'][^'|^\\\']*['|\\\'])*[^'|^\\\']*[^'|^\\\']$)/", $sql);
-foreach ($queries as $query)
-{
-    if (strlen(trim($query)) > 0)
-    {
-        $r = mysql_query($query);
-        if (!$r)
-            break;
+/**
+ *  Given an array of form
+ *
+ *  array(
+ *      user_string => setup_task
+ *  )
+ *
+ *  where   user_string     string describing the setup task, to be displayed to
+ *                          the user
+ *          setup_task      name of function to execute, of function signature *
+ *                              function hurf(&$flag, &$str, &$odd)
+ *
+ *  executes the given setup tasks and prints associated markup.
+ */
+function do_setup_tasks($arr) {
+    $idx = 0;
+    foreach ($arr as $str => $func) {
+        $ok = true;
+        $infostr = "";
+        $classstr = "even";
+        if($idx++ % 2 == 1)
+            $classstr = "odd";
+        ?>
+        <dt class="<?php echo $classstr; ?>"><?php echo $str; ?></dt>
+        <dd class="flag"><?php
+            $func($ok, $infostr);
+        ?></dd>
+        <?php
+        if(!$ok) {
+            ?>
+            <dd class="dead"><pre><?php
+            echo $infostr;
+            ?></pre></dd>
+            <?php
+            die();
+        }
     }
 }
-showResult($r);
 
+$dblink;
+$dbsql;
+function connect_to_db(&$flag, &$str) {
+    global $dblink;
 
+    $dblink = @mysql_connect(
+        CONFIG_DB_HOSTNAME,
+        CONFIG_DB_USER,
+        CONFIG_DB_PASSWORD
+    );
+    show_result($dblink);
 
-echo "Creating default users... ";
+    if(!$dblink) {
+        $flag = false;
+        $str = mysql_error();
+    } else {
+        $flag = true;
+        mysql_select_db(CONFIG_DB_NAME, $dblink);
+    }
+}
 
-$r = mysql_query("INSERT INTO users (id,name) VALUES (".NOTICE_ID.',"Notice")');
-showResult($r);
+function create_tables(&$flag, &$str) {
+    $dbsql = file_get_contents("db.sql");
+    $queries = preg_split("/;+(?=([^'|^\\\']*['|\\\'][^'|^\\\']*['|\\\'])*[^'|^\\\']*[^'|^\\\']$)/", $dbsql);
+    foreach ($queries as $query)
+    {
+        if (strlen(trim($query)) > 0)
+        {
+            $r = mysql_query($query);
+            if (!$r) {
+                $flag = false;
+                $str = mysql_error();
+                break;
+            }
+        }
+    }
+    show_result($r);
+}
 
+function create_default_users(&$flag, &$str) {
+    $r = mysql_query("INSERT INTO users (id,name) VALUES (".NOTICE_ID.',"Notice")');
+    show_result($r);
+    if (!$r) {
+        $flag = false;
+        $str = mysql_error();
+    }
+}
 
+function check_data_dir(&$flag, &$str) {
+    $testfile = CONFIG_DATADIR . '/test';
+    $handle = @fopen($testfile, "w");
 
+    if (!$handle) {
+        $flag = false;
+        $str = $php_errormsg;
+    }
 
-echo "Checking data directory... ";
+    fclose($handle);
+    $unlink = @unlink($testfile);
+    if (!$unlink) {
+        $flag = false;
+        $str = $php_errormsg;
+    }
 
-$testfile = CONFIG_DATADIR.'/test';
+    show_result($flag);
+}
 
-$handle = fopen($testfile, "w");
-showResult($handle);
+function create_avatar_dir(&$flag, &$str) {
+    $r = @mkdir(CONFIG_DATADIR.'/avatars');
+    show_result($r);
+    if (!$r) {
+        $flag = false;
+        $str = $php_errormsg;
+    }
+}
 
-unlink($testfile);
+function create_thumbs_dir(&$flag, &$str) {
+    $r = mkdir(CONFIG_DATADIR.'/thumbs');
+    show_result($r);
+    if (!$r) {
+        $flag = false;
+        $str = $php_errormsg;
+    }
+}
 
+function copy_default_avatars(&$flag, &$str) {
+    $source = array(
+        "../images/notice_avatar.jpg",
+        "../images/anybody_avatar.jpg",
+        "../images/default_avatar.jpg"
+    );
+    $dest = array(
+        CONFIG_DATADIR . '/avatars/' . NOTICE_ID . '.jpg',
+        CONFIG_DATADIR . '/avatars/' . ANYBODY_ID . '.jpg',
+        CONFIG_DATADIR . '/avatars/' . DEFAULT_ID . '.jpg'
+    );
 
-echo "Creating avatars directory... ";
-$r = mkdir(CONFIG_DATADIR.'/avatars');
-showResult($r);
+    $r = false;
+    for ($i = 0; $i < count($source); $i++) {
+        $success = @copy($source[$i], $dest[$i]);
+        $r |= $success;
 
-echo "Creating thumbs directory... ";
-$r = mkdir(CONFIG_DATADIR.'/thumbs');
-showResult($r);
+        if(!$success) {
+            $flag = false;
+            $str = $php_errormsg;
+        }
+    }
+    show_result($r);
+}
 
-
-
-echo "Copying default avatars... ";
-$r = copy("../images/notice_avatar.jpg", CONFIG_DATADIR.'/avatars/'.NOTICE_ID.'.jpg');
-$r |= copy("../images/anybody_avatar.jpg", CONFIG_DATADIR.'/avatars/'.ANYBODY_ID.'.jpg');
-$r |= copy("../images/default_avatar.jpg", CONFIG_DATADIR.'/avatars/'.DEFAULT_ID.'.jpg');
-
-showResult($r);
-
-echo '<br><br><font color="green">SUCCESS!</font><br>';
-
-
-mysql_close($link);
-
-function showResult($passed)
+function show_result($passed)
 {
+    $resultClass = "result";
+    $resultText = "OK";
+
+
     if (!$passed)
     {
-        echo '<font color="red">FAILED</font><br>';
-        die();
-    }else
-        echo '<font color="green">OK</font><br>';
+        $resultClass = "result result-failed";
+        $resultText = "Failed";
+    }
+    ?>
+    <span class="<?php echo $resultClass; ?>"><?php echo $resultText; ?></span>
+    <?php
 }
+
 ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+    <meta name="viewport" content="width=860">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <link rel="stylesheet" type="text/css" href="../css/main.css" />
+    <link rel="stylesheet" type="text/css" href="../css/iphone.css" />
+    <link rel="stylesheet" href="../css/font-awesome.css">
+    <link href='http://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
+    <title>settings</title>
+    <script type="text/javascript">
+
+        // insert google analytics code here!
+
+    </script>
+</head>
+<body class="setup">
+
+    <h1 class="pagetitle">Pendactive Setup</h1>
+
+    <dl class="initsteps">
+        <?php
+        do_setup_tasks(array(
+            'Checking MYSQL connection...'  => 'connect_to_db',
+            'Creating TABLES...'            => 'create_tables',
+            'Creating default users...'     => 'create_default_users',
+            'Checking data directory...'    => 'check_data_dir',
+            'Creating avatars directory...' => 'create_avatar_dir',
+            'Creating thumbs directory...'  => 'create_thumbs_dir',
+            'Creating default avatars...'   => 'copy_default_avatars'
+        ));
+        ?>
+        <dt class="success">SUCCESS!</dt>
+        <?php
+        mysql_close($dblink);
+        ?>
+    </dl>
+
+</body>
+</html>
