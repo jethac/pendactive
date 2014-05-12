@@ -172,8 +172,7 @@ function show_result($passed)
 <head>
     <meta name="viewport" content="width=860">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <link rel="stylesheet" type="text/css" href="../css/main.css" />
-    <link rel="stylesheet" type="text/css" href="../css/iphone.css" />
+    <link rel="stylesheet" type="text/css" href="../css/setup.css" />
     <link rel="stylesheet" href="../css/font-awesome.css">
     <link href='http://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
     <title>settings</title>
