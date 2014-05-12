@@ -1,0 +1,67 @@
+@import 'shared.less';
+
+body.setup {
+	.pagetitle {
+		width: 100%;
+		text-align: center;
+		text-transform:lowercase;
+		font-size: 50px;
+		color: #66a;
+		font-weight: bold;
+		text-shadow: rgba(0,0,0,0.3) 1px 1px 2px;
+	}
+}
+
+.initsteps {
+	width: 560px;
+	margin: 0px auto;
+	dt, dd {
+		display: block;
+		position: relative;
+		padding: 8px;
+		height: 20px;
+	}
+	dt {
+		float: left;
+		clear: both;
+		&.even {}
+		&.odd {}
+		&.success {
+			float: none;
+			margin: 0;
+			text-align: center;
+			font-weight: bold;
+		}
+	}
+	dd {
+		&.flag {
+			width: 64px;
+			float: right;
+			text-align: right;
+			margin: 0px;
+		}
+		&.dead {
+			clear: both;
+			margin: 0px 40px;
+
+			pre {
+				margin: 0px;
+			}
+		}
+		.result {
+			font-size: 11px;
+			font-weight: bold;
+			color: #fff;
+			text-transform: uppercase;
+
+			background-color: #00a65c;
+			border-radius: 4px;
+
+			padding: 2px 4px;
+
+			&.result-failed {
+				background-color: #cf0909;
+			}
+		}
+	}
+}

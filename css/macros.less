@@ -1,0 +1,55 @@
+.border-radius(@a)
+{
+	-webkit-border-radius: @a;
+	-moz-border-radius: @a;
+	border-radius: @a;
+}
+
+.box-shadow(@a)
+{
+	-webkit-box-shadow: @a;
+	-moz-box-shadow: @a;
+	box-shadow: @a;
+}
+
+.transition(@a)
+{
+	-webkit-transition: @a;
+	-moz-transition: @a;
+	transition: @a;
+}
+
+.background-radial(@a, @b)
+{
+	background: radial-gradient(
+		center,
+		ellipse cover,
+		@a 0%,
+		@b 100%
+	);
+	background: -moz-radial-gradient(
+		center,
+		ellipse cover,
+		@a 0%,
+		@b 100%
+	);
+	background: -webkit-gradient(
+		radial,
+		center center,
+		0px,
+		center center,
+		100%,
+		color-stop(
+			0%,
+			@a
+		),
+		color-stop(
+			100%,
+			@b
+		)
+	);
+	background: -webkit-radial-gradient(center, ellipse cover,  rgba(255,255,255,1) 0%,rgba(196,220,255,1) 	100%);
+	background: -o-radial-gradient(center, ellipse cover,  rgba(255,255,255,1) 0%,rgba(196,220,255,1) 100%);
+	background: -ms-radial-gradient(center, ellipse cover,  rgba(255,255,255,1) 0%,rgba(196,220,255,1) 100%);
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#c4dcff',GradientType=1 );
+}

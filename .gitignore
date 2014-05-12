@@ -1,3 +1,13 @@
 .DS_Store
 php/config.php
 
+lib/**
+css/*.css
+css/*.css.map
+!css/font-awesome.css
+!css/font-aweseome-ie7.css
+!css/iphone.css
+!css/loading.css
+!css/main.css
+!css/nav.css
+!css/setup.css
